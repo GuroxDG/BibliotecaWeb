@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -93,15 +94,10 @@ WSGI_APPLICATION = 'libreria_online.wsgi.application'
 # }
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'Libreria',
-        'USER': 'postgres',
-        'PASSWORD': 'Dba2019',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
+    'default': 
+    dj_database_url.config( default='postgresql://postgres:RTpSdhubhpxVcfAYykGGIRfLnnqCrGEx@mainline.proxy.rlwy.net:16916/railway' )        
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
