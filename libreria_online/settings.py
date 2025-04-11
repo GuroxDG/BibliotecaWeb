@@ -32,6 +32,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = ['http://*','https://*','https://bibliotecaweb-production.up.railway.app']
+
 
 # Application definition
 
@@ -157,5 +159,3 @@ STORAGES = {
     },
 }
 
-
-CSRF_TRUSTED_ORIGINS = ['http://*','https://*']
