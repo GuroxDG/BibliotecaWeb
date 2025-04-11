@@ -1,1 +1,1 @@
-web: gunicorn libreria_online.wsgi
+web: python manage.py collectstatic && gunicorn libreria_online.wsgi
