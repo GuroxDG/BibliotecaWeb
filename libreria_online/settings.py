@@ -152,8 +152,11 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/usuarios/login/'
 
 STORAGES = {
-    # ...
+
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+
+CSRF_TRUSTED_ORIGINS = ['http://*','https://*']
