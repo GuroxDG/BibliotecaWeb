@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Catálogo de Libros{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Catálogo de Libros</h1>
+        </div>
+        <div class="col-md-4">
+            <form method="GET" action="{% url 'lista_libros' %}" class="d-flex">
+                <input class="form-control me-2" type="search" name="busqueda" placeholder="Buscar libros..." value="{{ request.GET.busqueda|default:'' }}">
+                <button class="btn btn-outline-primary" type="submit">Buscar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">Filtros</div>
+                <div class="card-body">
+                    <form method="GET" action="{% url 'lista_libros' %}">
+                        <div class="mb-3">
+                            <label class="form-label">Categoría</label>
+                            <select name="categoria" class="form-select">
+                                <option value="">Todas las categorías</option>
+                                {% for categoria in categorias %}
+                                    <option value="{{ categoria.id }}" {% if request.GET.categoria == categoria.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ categoria.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Formato</label>
+                            <select name="formato" class="form-select">
+                                <option value="">Todos los formatos</option>
+                                <option value="fisico" {% if request.GET.formato == 'fisico' %}selected{% endif %}>Físico</option>
+                                <option value="digital" {% if request.GET.formato == 'digital' %}selected{% endif %}>Digital</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+                        <a href="{% url 'lista_libros' %}" class="btn btn-outline-secondary">Limpiar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                {% for libro in libros %}
+                    <div class="col">
+                        <div class="card libro-card h-100">
+                            {% if libro.imagen %}
+                            <img src="{{ libro.imagen.url }}" alt="{{ libro.titulo }}" style="width: 250px; height: 280px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light text-center p-5">
+                                    <span class="text-muted">Sin imagen</span>
+                                </div>
+                            {% endif %}
+                            <div class="card-body">
+                                <h5 class="card-title">{{ libro.titulo }}</h5>
+                                <p class="card-text">{{ libro.autor.nombre }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary">{{ libro.formato|title }}</span>
+                                    <span class="text-success fw-bold">${{ libro.precio }}</span>
+                                </div>
+                                <p class="card-text mt-2">
+                                    <small class="text-muted">Stock: {{ libro.stock }}</small>
+                                </p>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'detalle_libro' libro.id %}" class="btn btn-sm btn-outline-primary">Ver detalles</a>
+                                    {% if libro.stock > 0 %}
+                                        <a href="{% url 'agregar_al_carrito' libro.id %}" class="btn btn-sm btn-success">Añadir al carrito</a>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-secondary" disabled>Sin stock</button>
+                                    {% endif %}
+
+                                    {% if user.is_authenticated and user.is_superuser %}
+                                        <a href="{% url 'editar_libro' libro.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{% url 'eliminar_libro' libro.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+                                    {% endif %}
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            No se encontraron libros con los criterios de búsqueda.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

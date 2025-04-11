@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Carrito{% endblock %}
+
+{% block content %}
+    <h1>Mi Carrito</h1>
+    
+    {% if carrito.items.all %}
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        Artículos ({{ carrito.items.count }})
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Precio</th>
+                                        <th>Cantidad</th>
+                                        <th>Subtotal</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in carrito.items.all %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'detalle_libro' item.libro.id %}">{{ item.libro.titulo }}</a>
+                                                <br>
+                                                <small class="text-muted">{{ item.libro.autor.nombre }}</small>
+                                            </td>
+                                            <td>${{ item.libro.precio }}</td>
+                                            <td>
+                                                <form method="POST" action="{% url 'actualizar_cantidad' item.id %}" class="d-flex align-items-center">
+                                                    {% csrf_token %}
+                                                    <input type="number" name="cantidad" value="{{ item.cantidad }}" min="1" max="{{ item.libro.stock }}" class="form-control form-control-sm" style="width: 70px;">
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary ms-2">
+                                                        Actualizar
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td>${{ item.obtener_subtotal }}</td>
+                                            <td>
+                                                <a href="{% url 'eliminar_del_carrito' item.id %}" class="btn btn-sm btn-danger">
+                                                    Eliminar
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        Resumen del pedido
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Subtotal:</span>
+                            <span>${{ carrito.obtener_total }}</span>
+                        </div>
+                        
+                        <form method="POST" action="{% url 'aplicar_cupon' %}" class="mb-3">
+                            {% csrf_token %}
+                            <div class="input-group mb-3">
+                                <input type="text" name="codigo_cupon" class="form-control" placeholder="Código de cupón">
+                                <button class="btn btn-outline-primary" type="submit">Aplicar</button>
+                            </div>
+                        </form>
+                        
+                        {% if request.session.cupon_id %}
+                            <div class="alert alert-success">
+                                Cupón aplicado: Descuento de {{ cupon.descuento }}%
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Total con descuento:</span>
+                                <span>${{ carrito.aplicar_cupon }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'confirmar_pedido' %}" class="btn btn-success">
+                                Proceder al pago
+                            </a>
+                            <a href="{% url 'lista_libros' %}" class="btn btn-outline-primary">
+                                Seguir comprando
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            Tu carrito está vacío. <a href="{% url 'lista_libros' %}">Ir a la tienda</a>
+        </div>
+    {% endif %}
+{% endblock %}

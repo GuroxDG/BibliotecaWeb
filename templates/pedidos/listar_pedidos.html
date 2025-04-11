@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Administración de Pedidos{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h1>Administración de Pedidos</h1>
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<table class="table table-striped mt-4">
+    <thead>
+        <tr>
+            <th>Número de Orden</th>
+            <th>Usuario</th>
+            <th>Fecha</th>
+            <th>Estado Actual</th>
+            <th>Total</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pedido in pedidos %}
+        <tr>
+            <td>{{ pedido.numero_orden }}</td>
+            <td>{{ pedido.usuario.email }}</td>
+            <td>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</td>
+            <td>
+                <span class="badge 
+                    {% if pedido.estado == 'pendiente' %}bg-warning
+                    {% elif pedido.estado == 'pagado' %}bg-info
+                    {% elif pedido.estado == 'enviado' %}bg-primary
+                    {% elif pedido.estado == 'entregado' %}bg-success
+                    {% elif pedido.estado == 'cancelado' %}bg-danger
+                    {% endif %}">
+                    {{ pedido.get_estado_display }}
+                </span>
+            </td>
+            <td>${{ pedido.total }}</td>
+            <td>
+                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalPedido{{ pedido.id }}">
+                    Cambiar estado
+                </button>
+                
+                <!-- Modal para cambiar estado -->
+                <div class="modal fade" id="modalPedido{{ pedido.id }}" tabindex="-1" aria-labelledby="modalLabel{{ pedido.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalLabel{{ pedido.id }}">Cambiar estado del pedido #{{ pedido.numero_orden }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="post" action="{% url 'actualizar_estado_pedido' pedido.id %}">
+                                {% csrf_token %}
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label for="estado">Nuevo estado:</label>
+                                        <select name="estado" id="estado" class="form-control">
+                                            {% for value, label in pedido.ESTADO_CHOICES %}
+                                            <option value="{{ value }}" {% if pedido.estado == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Información del pedido -->
+                                    <div class="mt-3">
+                                        <h6>Detalles del pedido:</h6>
+                                        <ul class="list-group">
+                                            {% for detalle in pedido.detalles.all %}
+                                            <li class="list-group-item">
+                                                {{ detalle.cantidad }}x {{ detalle.libro.titulo }} - ${{ detalle.precio_unitario }}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% if pedido.direccion_envio %}
+                                        <div class="mt-2">
+                                            <strong>Dirección de envío:</strong>
+                                            <p>{{ pedido.direccion_envio }}</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">No hay pedidos registrados</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Pedido{% endblock %}
+
+{% block content %}
+    <h1>Confirmar Pedido</h1>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    Artículos en tu pedido
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Precio</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in carrito.items.all %}
+                                    <tr>
+                                        <td>
+                                            {{ item.libro.titulo }}
+                                            <br>
+                                            <small class="text-muted">{{ item.libro.autor.nombre }}</small>
+                                        </td>
+                                        <td>${{ item.libro.precio }}</td>
+                                        <td>{{ item.cantidad }}</td>
+                                        <td>${{ item.obtener_subtotal }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    Dirección de envío
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'procesar_pedido' %}" id="form-pedido">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="direccion" class="form-label">Dirección completa</label>
+                            <textarea class="form-control" id="direccion" name="direccion" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    Resumen del pedido
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Subtotal:</span>
+                        <span>${{ carrito.obtener_total }}</span>
+                    </div>
+                    
+                    {% if cupon %}
+                        <div class="alert alert-success">
+                            Cupón aplicado: {{ cupon.codigo }} ({{ cupon.descuento }}% descuento)
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Descuento:</span>
+                            <span>-${{ carrito.obtener_total|floatformat:2 }})</span>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between mb-3 fw-bold">
+                        <span>Total:</span>
+                        <span>${{ total|floatformat:2 }}</span>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" form="form-pedido" class="btn btn-success">
+                            Confirmar y Pagar
+                        </button>
+                        <a href="{% url 'ver_carrito' %}" class="btn btn-outline-secondary">
+                            Volver al carrito
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

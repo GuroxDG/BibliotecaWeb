@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Pedido #{{ pedido.numero_orden }}{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Pedido #{{ pedido.numero_orden }}</h1>
+        <a href="{% url 'historial_pedidos' %}" class="btn btn-outline-primary">
+            Volver al historial
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    Información del pedido
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Fecha:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            {{ pedido.fecha_creacion|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <strong>Estado:</strong>
+                        </div>
+                        <div class="col-md-8">
+                            {% if pedido.estado == 'pendiente' %}
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                            {% elif pedido.estado == 'pagado' %}
+                                <span class="badge bg-success">Pagado</span>
+                            {% elif pedido.estado == 'enviado' %}
+                                <span class="badge bg-info">Enviado</span>
+                            {% elif pedido.estado == 'entregado' %}
+                                <span class="badge bg-primary">Entregado</span>
+                            {% elif pedido.estado == 'cancelado' %}
+                                <span class="badge bg-danger">Cancelado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if pedido.direccion_envio %}
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>Dirección de envío:</strong>
+                            </div>
+                            <div class="col-md-8">
+                                {{ pedido.direccion_envio }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    Productos
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Precio unitario</th>
+                                    <th>Cantidad</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for detalle in pedido.detalles.all %}
+                                    <tr>
+                                        <td>{{ detalle.libro.titulo }}</td>
+                                        <td>${{ detalle.precio_unitario }}</td>
+                                        <td>{{ detalle.cantidad }}</td>
+                                        <td>${{ detalle.subtotal }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    Resumen del pedido
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Subtotal:</span>
+                        <span>${{ pedido.total }}</span>
+                    </div>
+                    
+                    {% if pedido.cupon %}
+                        <div class="alert alert-success">
+                            Cupón aplicado: {{ pedido.cupon.codigo }} ({{ pedido.cupon.descuento }}% descuento)
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between mb-3 fw-bold">
+                        <span>Total:</span>
+                        <span>${{ pedido.total }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

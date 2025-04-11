@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ libro.titulo }}{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-4">
+            {% if libro.imagen %}
+                <img src="{{ libro.imagen.url }}" class="img-fluid rounded" alt="{{ libro.titulo }}">
+            {% else %}
+                <div class="bg-light text-center p-5 rounded">
+                    <span class="text-muted">Sin imagen</span>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            <h1>{{ libro.titulo }}</h1>
+            <p class="lead">por {{ libro.autor.nombre }}</p>
+            
+            <div class="mb-3">
+                {% for categoria in libro.categorias.all %}
+                    <span class="badge bg-secondary">{{ categoria.nombre }}</span>
+                {% endfor %}
+                <span class="badge bg-primary">{{ libro.formato|title }}</span>
+            </div>
+            
+            <div class="mb-3">
+                <h4 class="text-success">${{ libro.precio }}</h4>
+                <p>Stock disponible: {{ libro.stock }}</p>
+            </div>
+            
+            <div class="mb-4">
+                {% if libro.stock > 0 %}
+                    <a href="{% url 'agregar_al_carrito' libro.id %}" class="btn btn-success">
+                        Añadir al carrito
+                    </a>
+                {% else %}
+                    <button class="btn btn-secondary" disabled>Sin stock</button>
+                {% endif %}
+
+                {% if user.is_authenticated and user.is_superuser %}
+                    <a href="{% url 'editar_libro' libro.pk %}" class="btn btn-warning">Editar</a>
+                    <a href="{% url 'eliminar_libro' libro.pk %}" class="btn btn-danger">Eliminar</a>
+                {% endif %}
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">Descripción</div>
+                <div class="card-body">
+                    <p class="card-text">{{ libro.descripcion }}</p>
+                </div>
+            </div>
+            
+            {% if libro.fecha_publicacion %}
+                <p><strong>Fecha de publicación:</strong> {{ libro.fecha_publicacion }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if libros_relacionados %}
+        <div class="mt-5">
+            <h3>Libros relacionados</h3>
+            <div class="row row-cols-1 row-cols-md-4 g-4 mt-2">
+                {% for libro_rel in libros_relacionados %}
+                    <div class="col">
+                        <div class="card libro-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ libro_rel.titulo }}</h5>
+                                <p class="card-text">{{ libro_rel.autor.nombre }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-primary">{{ libro_rel.formato|title }}</span>
+                                    <span class="text-success fw-bold">${{ libro_rel.precio }}</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{% url 'detalle_libro' libro_rel.id %}" class="btn btn-sm btn-outline-primary">Ver detalles</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
