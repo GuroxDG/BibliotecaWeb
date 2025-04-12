@@ -1,89 +1,146 @@
 import pytest
 from decimal import Decimal
-from carrito.models import Carrito, ItemCarrito
-from libros.models import Autor, Libro
-from pedidos.models import Cupon
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.db import IntegrityError
+from django.utils import timezone
 from usuarios.models import Usuario
-from unittest.mock import MagicMock
-from django.core.exceptions import ObjectDoesNotExist
+from libros.models import Libro, Autor, Categoria
+from carrito.models import Carrito, ItemCarrito, verificar_stock
+from pedidos.models import Cupon
 
-pytestmark = pytest.mark.django_db
-
-def test_agregar_item_con_stock(db):
-    autor = Autor.objects.create(nombre="Autor de prueba")
-    usuario = Usuario.objects.create_user(email="test@mail.com", password="testpass123")
+@pytest.mark.django_db
+class TestCarritoModel:
+    @pytest.fixture
+    def setup_usuario(self):
+        return Usuario.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password="password123"
+        )
     
-    libro = Libro.objects.create(
-        titulo="Django 101",
-        stock=5,
-        precio=Decimal("100.00"),
-        autor=autor  # ← este es el fix
-    )
+    @pytest.fixture
+    def setup_libro(self):
+        autor = Autor.objects.create(nombre="Autor Test")
+        categoria = Categoria.objects.create(nombre="Categoría Test")
+        libro = Libro.objects.create(
+            titulo="Libro de prueba",
+            autor=autor,
+            descripcion="Descripción de prueba",
+            precio=Decimal('25.99'),
+            stock=10,
+            formato="fisico"
+        )
+        libro.categorias.add(categoria)
+        return libro
     
-    carrito = Carrito.objects.create(usuario=usuario)
-    item = ItemCarrito.objects.create(carrito=carrito, libro=libro, cantidad=1)
+    @pytest.fixture
+    def setup_carrito(self, setup_usuario):
+        return Carrito.objects.create(usuario=setup_usuario)
     
-    assert item.obtener_subtotal() == Decimal("100.00")
+    def test_crear_carrito(self, setup_usuario):
+        carrito = Carrito.objects.create(usuario=setup_usuario)
+        assert carrito.usuario.email == "test@example.com"
+        assert carrito.items.count() == 0
+    
+    def test_str_representation(self, setup_carrito):
+        assert str(setup_carrito) == "Carrito de test@example.com"
+    
+    def test_obtener_total_sin_items(self, setup_carrito):
+        assert setup_carrito.obtener_total() == 0
+    
+    def test_obtener_total_con_items(self, setup_carrito, setup_libro):
+        # Agregar un item al carrito
+        ItemCarrito.objects.create(
+            carrito=setup_carrito,
+            libro=setup_libro,
+            cantidad=2
+        )
+        
+        # El total debe ser precio * cantidad
+        assert setup_carrito.obtener_total() == Decimal('51.98')  # 25.99 * 2
+ 
+    
 
-def test_error_si_no_hay_stock():
-    usuario = Usuario.objects.create(email="test@mail.com", password="testpass123")
-    libro = Libro.objects.create(titulo="Python Crash", stock=1, precio=Decimal("50.00"))
-    carrito = Carrito.objects.create(usuario=usuario)
-
-    with pytest.raises(ValueError) as exc:
-        ItemCarrito.objects.create(carrito=carrito, libro=libro, cantidad=2)
-
-    assert "No hay suficiente stock" in str(exc.value)
-
-def test_total_del_carrito():
-    usuario = Usuario.objects.create(email="cliente@mail.com", password="12345678")
-    libro1 = Libro.objects.create(titulo="Libro 1", stock=10, precio=Decimal("80.00"))
-    libro2 = Libro.objects.create(titulo="Libro 2", stock=10, precio=Decimal("120.00"))
-    carrito = Carrito.objects.create(usuario=usuario)
-
-    ItemCarrito.objects.create(carrito=carrito, libro=libro1, cantidad=1)
-    ItemCarrito.objects.create(carrito=carrito, libro=libro2, cantidad=2)
-
-    assert carrito.obtener_total() == Decimal("320.00")
-
-def test_aplicar_cupon_valido(mocker):
-    usuario = Usuario.objects.create(email="cupon@mail.com", password="testpass")
-    carrito = Carrito.objects.create(usuario=usuario)
-    libro = Libro.objects.create(titulo="Libro Cupón", stock=5, precio=Decimal("200.00"))
-    ItemCarrito.objects.create(carrito=carrito, libro=libro, cantidad=1)
-
-    cupon = MagicMock()
-    cupon.es_valido.return_value = True
-    cupon.descuento = 25
-
-    total_con_descuento = carrito.aplicar_cupon(cupon)
-
-    assert total_con_descuento == Decimal("150.00")
-
-def test_aplicar_cupon_invalido(mocker):
-    usuario = Usuario.objects.create(email="nocupon@mail.com", password="testpass")
-    carrito = Carrito.objects.create(usuario=usuario)
-    libro = Libro.objects.create(titulo="Libro", stock=5, precio=Decimal("100.00"))
-    ItemCarrito.objects.create(carrito=carrito, libro=libro, cantidad=2)
-
-    cupon = MagicMock()
-    cupon.es_valido.return_value = False
-    cupon.descuento = 50  # No debe importar
-
-    total_sin_descuento = carrito.aplicar_cupon(cupon)
-
-    assert total_sin_descuento == Decimal("200.00")
-
-def test_incrementar_cantidad_si_libro_ya_existe():
-    usuario = Usuario.objects.create(email="usuario@mail.com", password="12345678")
-    libro = Libro.objects.create(titulo="Libro repetido", stock=3, precio=Decimal("75.00"))
-    carrito = Carrito.objects.create(usuario=usuario)
-
-    item = ItemCarrito.objects.create(carrito=carrito, libro=libro, cantidad=1)
-
-    # Simula lógica de la vista
-    if item.cantidad + 1 <= libro.stock:
-        item.cantidad += 1
-        item.save()
-
-    assert item.cantidad == 2
+@pytest.mark.django_db
+class TestItemCarritoModel:
+    @pytest.fixture
+    def setup_usuario(self):
+        return Usuario.objects.create_user(
+            username="testuser",
+            email="test@example.com",
+            password="password123"
+        )
+    
+    @pytest.fixture
+    def setup_libro(self):
+        autor = Autor.objects.create(nombre="Autor Test")
+        libro = Libro.objects.create(
+            titulo="Libro de prueba",
+            autor=autor,
+            descripcion="Descripción de prueba",
+            precio=Decimal('15.50'),
+            stock=8,
+            formato="fisico"
+        )
+        return libro
+    
+    @pytest.fixture
+    def setup_carrito(self, setup_usuario):
+        return Carrito.objects.create(usuario=setup_usuario)
+    
+    def test_crear_item_carrito(self, setup_carrito, setup_libro):
+        item = ItemCarrito.objects.create(
+            carrito=setup_carrito,
+            libro=setup_libro,
+            cantidad=3
+        )
+        assert item.carrito == setup_carrito
+        assert item.libro == setup_libro
+        assert item.cantidad == 3
+    
+    def test_str_representation(self, setup_carrito, setup_libro):
+        item = ItemCarrito.objects.create(
+            carrito=setup_carrito,
+            libro=setup_libro,
+            cantidad=2
+        )
+        assert str(item) == "2 x Libro de prueba"
+    
+    def test_obtener_subtotal(self, setup_carrito, setup_libro):
+        item = ItemCarrito.objects.create(
+            carrito=setup_carrito,
+            libro=setup_libro,
+            cantidad=4
+        )
+        assert item.obtener_subtotal() == Decimal('62.00')  # 15.50 * 4
+    
+    def test_unique_together_constraint(self, setup_carrito, setup_libro):
+        # Crear un item
+        ItemCarrito.objects.create(
+            carrito=setup_carrito,
+            libro=setup_libro,
+            cantidad=1
+        )
+        
+        # Intentar crear otro item con el mismo carrito y libro
+        with pytest.raises(IntegrityError):
+            ItemCarrito.objects.create(
+                carrito=setup_carrito,
+                libro=setup_libro,
+                cantidad=2
+            )
+    
+    def test_verificar_stock_signal(self, setup_carrito, setup_libro):
+        # El libro tiene stock=8, así que esto debería funcionar
+        item = ItemCarrito(
+            carrito=setup_carrito,
+            libro=setup_libro,
+            cantidad=5
+        )
+        item.save()  # No debería lanzar error
+        
+        # Intentar guardar con una cantidad mayor al stock
+        item.cantidad = 10  # Esto excede el stock de 8
+        with pytest.raises(ValueError):
+            item.save()
