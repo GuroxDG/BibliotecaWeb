@@ -87,21 +87,21 @@ WSGI_APPLICATION = 'libreria_online.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # Configuración de la base de datos MySQL
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'libreria',
-#         'USER': 'root',
-#         'PASSWORD': 'SirisADMIN*2022',
-#         'HOST': 'localhost',
-#         'PORT': '3306',
-#     }
-# }
-
 DATABASES = {
-    'default': 
-    dj_database_url.config( default=os.getenv('DATABASE_URL') )        
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'Biblioteca',
+        'USER': 'postgres',
+        'PASSWORD': 'Dba2019',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
+
+# DATABASES = {
+#     'default': 
+#     dj_database_url.config( default=os.getenv('DATABASE_URL') )        
+# }
 
 
 # Password validation

@@ -30,7 +30,8 @@ class Libro(models.Model):
     stock = models.PositiveIntegerField(default=0)
     formato = models.CharField(max_length=10, choices=FORMATO_CHOICES)
     fecha_publicacion = models.DateField(blank=True, null=True)
-    imagen = models.ImageField(upload_to='libros/', blank=True, null=True)
+    imagen = models.ImageField(upload_to='libros/', blank=True, null=True)   
+    vectorImg = models.BinaryField(blank=True, null=True) 
     
     def __str__(self):
         return self.titulo
