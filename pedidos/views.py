@@ -45,7 +45,7 @@ def confirmar_pedido(request):
 @transaction.atomic
 def procesar_pedido(request):
     if request.method == 'POST':
-        carrito, created = Carrito.objects.get_or_create(usuario=request.user)
+        carrito, _ = Carrito.objects.get_or_create(usuario=request.user)
         
         if not carrito.items.exists():
             messages.error(request, "Tu carrito está vacío.")
