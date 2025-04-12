@@ -1,0 +1,11 @@
+[run]
+source = .
+omit = 
+    */libreria_online/asgi.py
+    */libreria_online/wsgi.py
+    */manage.py
+
+    */migrations/*
+    */tests/*
+    */__pycache__/*
+    */venv/*
