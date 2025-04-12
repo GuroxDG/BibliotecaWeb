@@ -9,7 +9,7 @@ from pedidos.models import Cupon
 
 @login_required
 def ver_carrito(request):
-    carrito, created = Carrito.objects.get_or_create(usuario=request.user)
+    carrito, _ = Carrito.objects.get_or_create(usuario=request.user)
     return render(request, 'carrito/carrito.html', {'carrito': carrito})
 
 @login_required
